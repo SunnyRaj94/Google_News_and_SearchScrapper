@@ -7,7 +7,7 @@ It allows you to extract all found links and their titles and descriptions progr
 It also supports proxies for scrapping process.
 
 
-### Scrape news articles from google news
+## Scrape news articles from google news
 
 PARAMS ---
 use_proxy_param --- It enables to use proxy for scrapping
@@ -53,3 +53,28 @@ dict_keys(['title', 'link', 'pubDate', 'description'])
 
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+## Scrape results from google search
+
+gs = GSearch(use_proxy_param=False,use_session=True)
+
+query = "Cooking" ## search term 
+
+query,search_type,site,page_count = query, "" , "twitter.com" , 5
+
+query_urls = gs._generate_urls_(query,search_type,page_count,site=site)
+
+query_results = gs.get_results(query_urls[0:1])
+
+## query results looks like 
+
+[{'title': '#cooking - Twitter Search / Twitter',
+  'description': '#cooking - Twitter Search / Twitterhttps://twitter.com › hashtag › cookinghttps://twitter.com › hashtag › cookingSee Tweets about #cooking on Twitter. ... Cooking Channel serves up a world of global cuisines and cooking techniques -- for Food People, by Food People.',
+  'links': ['https://twitter.com/hashtag/cooking']},
+ {'title': 'Cooking Channel (@CookingChannel) / Twitter',
+  'description': 'Web resultsCooking Channel (@CookingChannel) / Twitterhttps://twitter.com › cookingchannelhttps://twitter.com › cookingchannelFrom the people who brought you Food Network, Cooking Channel serves up a world of global cuisines and cooking techniques -- for Food People,\xa0...07-Feb-2022',
+  'links': ['https://twitter.com/cookingchannel']},
+ {'title': 'NYT Cooking and Food (@nytfood) / Twitter',
+  'description': 'NYT Cooking and Food (@nytfood) / Twitterhttps://twitter.com › nytfoodhttps://twitter.com › nytfood23 hours ago — The savviest home cooks and recipe creators always think about how to streamline and innovate in ways big and small, and these 24 baking recipes illustrate just\xa0...',
+  'links': ['https://twitter.com/nytfood']}]
+
