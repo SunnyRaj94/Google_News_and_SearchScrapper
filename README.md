@@ -13,33 +13,42 @@ from GoogleRssFeed import *
 
 PARAMS ---
 use_proxy_param --- It enables to use proxy for scrapping
+
 use_session     --- It uses request-html instead of requests
+
 logger          --- if you want to log // you can pass your logger
 
 gfeed = GFeed()
 
 you can scrape articles from any of these topics -- 
+
 COVID-19,WORLD,NATION,BUSINESS,TECHNOLOGY,ENTERTAINMENT,SCIENCE,SPORTS,HEALTH
 
 you can scrape articles from any of these languages -- 
+
 ta,gu,en,bn,kn,mr,te,ml,hi
 
 
 lang,topic,hours='hi','BUSINESS',10
 topic_url = gfeed.make_topic_url(lang,topic,hours)
+
 https://news.google.com/rss/headlines/section/topic/BUSINESS?when%3A10h&hl=hi&gl=IN&ceid=IN%3Ahi
 
 lang,topic,hours='hi','BUSINESS',10
 topic_url = gfeed.make_topic_url(lang,topic,hours)
 articles = gfeed.get_articles(topic_url)
+
 print("we got total : ",len(articles)," articles")
 
 we got total :  34  articles
 
 articles[0].keys()
+
 dict_keys(['title', 'link', 'pubDate', 'description'])
 
 articles[0]
+
+
 {'title': 'Taking Stock: यूक्रेन पर रूस की नरमी से बाजार में रौनक, निफ्टी में दिखी 509 अंकों की इंट्रा-डे तेजी, - मनी कंट्रोल',
  'link': 'https://news.google.com/__i/rss/rd/articles/CBMixgFodHRwczovL2hpbmRpLm1vbmV5Y29udHJvbC5jb20vbmV3cy9tYXJrZXRzL3Rha2luZy1zdG9jay1ydXNzaWFzLXNvZnRuZXNzLW9uLXVrcmFpbmUtYnJpZ2h0ZW5zLXRoZS1tYXJrZXQtbmlmdHktc2Vlcy1hbi1pbnRyYS1kYXktcmlzZS1vZi01MDktcG9pbnRzLWtub3ctaG93LXRoZS1tYXJrZXQtbWF5LW1vdmUtdG9tb3Jyb3ctNDQ4NTMxLmh0bWzSAQA?oc=5',
  'pubDate': 'Tue, 15 Feb 2022 11:41:00 GMT',
