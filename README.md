@@ -39,9 +39,6 @@ https://news.google.com/rss/headlines/section/topic/BUSINESS?when%3A10h&hl=hi&gl
 
 articles = gfeed.get_articles(topic_url)
 
-print("we got total : ",len(articles)," articles")
-
-
 ##### articles have these keys 
 dict_keys(['title', 'link', 'pubDate', 'description'])
 
