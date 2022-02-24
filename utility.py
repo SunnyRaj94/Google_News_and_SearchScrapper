@@ -1,0 +1,106 @@
+from requests_html import HTMLSession
+from bs4 import BeautifulSoup
+import time
+import random
+from itertools import cycle
+import requests
+import pandas as pd
+import numpy as np
+import traceback
+
+df = pd.read_csv("google_feed_section_hashcodes.csv")
+df = df[['lang', 'topic', 'topic_hash', 'section_name','section_hash','section_mapped',
+         'section_name_translated','topic_name_translated','topic_mapped']]
+df.replace(np.nan,'',inplace=True)
+value_dicts = df.to_dict(orient='records')
+LANGS = ['ta', 'gu', 'en', 'bn', 'kn', 'mr', 'te', 'ml', 'hi']
+TOPICS = ['COVID-19','WORLD', 'NATION', 'BUSINESS', 'TECHNOLOGY', 'ENTERTAINMENT', 'SCIENCE', 'SPORTS', 'HEALTH']
+TOPICS_DICT = {'ta': {'COVID-19': [], 'BUSINESS': [], 'NATION': [], 'WORLD': [], 'TECHNOLOGY': [],
+           'ENTERTAINMENT': ['RECENT', 'ART', 'TV', 'MUSIC', 'BOOKS', 'CELEBRITIES', 'MOVIES'],
+           'SCIENCE': [], 'HEALTH': [], 'SPORTS': []},
+    'gu': {'COVID-19': ['COVID-19', 'NATION'], 'BUSINESS': [], 'NATION': [], 'WORLD': [], 'TECHNOLOGY': [],
+           'ENTERTAINMENT': ['BREAKING NEWS', 'ART', 'TV', 'PEOPLE', 'MUSIC', 'BOOKS', 'MOVIES'], 'SCIENCE': [],
+           'HEALTH': [], 'SPORTS': ['BREAKING NEWS', 'TENNIS', 'CRICKET', 'F1', 'HOCKEY', 'FOOTBALL', 'BADMINTON', 'KABADDI']},
+    'en': {'COVID-19': ['COVID-19', 'NATION'], 'BUSINESS': ['BUSINESS', 'ENTREPRENEURSHIP', 'ECONOMY', 'JOBS', 'MARKETS', 'LATEST'],
+           'NATION': [], 'WORLD': [], 'TECHNOLOGY': ['GADGETS', 'TECHNOLOGY', 'MOBILE', 'COMPUTING', 'INTERNET', 'ARTIFICIAL INTELLIGENCE', 'LATEST'],
+           'ENTERTAINMENT': ['ART', 'TV', 'MUSIC', 'BOOKS', 'CELEBRITIES', 'MOVIES', 'LATEST'],
+           'SCIENCE': ['GENETICS', 'ENVIRONMENT', 'WILDLIFE', 'TECHNOLOGY', 'PHYSICS', 'LATEST'],
+           'HEALTH': ['HEALTHCARE', 'FITNESS', 'MEDICINE', 'NUTRITION', 'HEALTH', 'LATEST'],
+           'SPORTS': ['KABBADI', 'TENNIS', 'CRICKET', 'F1', 'HOCKEY', 'FOOTBALL', 'BADMINTON', 'BASKETBALL', 'LATEST']},
+    'bn': {'COVID-19': [], 'BUSINESS': [], 'NATION': [], 'WORLD': [], 'TECHNOLOGY': [],
+           'ENTERTAINMENT': ['MOST RECENT', 'ART', 'TV', 'MUSIC', 'BOOKS', 'CELEBRITIES', 'MOVIES'],
+           'SCIENCE': [], 'HEALTH': [], 'SPORTS': []},
+    'kn': {'COVID-19': ['COVID-19', 'NATION'], 'BUSINESS': [], 'NATION': [], 'WORLD': [], 'TECHNOLOGY': [],
+           'ENTERTAINMENT': ['BREAKING NEWS', 'ART', 'TV', 'PEOPLE', 'MUSIC', 'BOOKS', 'MOVIES'], 'SCIENCE': [], 'HEALTH': [],
+           'SPORTS': ['BREAKING NEWS', 'TENNIS', 'CRICKET', 'F1', 'HOCKEY', 'FOOTBALL', 'BADMINTON', 'KABADDI']},
+    'mr': {'COVID-19': [], 'BUSINESS': [], 'NATION': [], 'WORLD': [], 'TECHNOLOGY': [],
+           'ENTERTAINMENT': ['CELEBRITY', 'ART', 'TV', 'MUSIC', 'BOOKS', 'MOVIES', 'LATEST'], 'SCIENCE': [], 'HEALTH': [],
+           'SPORTS': []},
+    'te': {'COVID-19': [], 'BUSINESS': [], 'NATION': [], 'WORLD': [], 'TECHNOLOGY': [],
+           'ENTERTAINMENT': ['FRESH', 'ART', 'TV', 'PEOPLE', 'MUSIC', 'BOOKS', 'MOVIES'], 'SCIENCE': [], 'HEALTH': [],
+           'SPORTS': []},
+    'ml': {'COVID-19': [], 'BUSINESS': [], 'NATION': [], 'WORLD': [], 'TECHNOLOGY': [],
+           'ENTERTAINMENT': ['ART', 'TV', 'CELEBRITIES', 'MUSIC', 'BOOKS', 'THE LATEST', 'MOVIES'],
+           'SCIENCE': [], 'HEALTH': [], 'SPORTS': []},
+    'hi': {'COVID-19': ['COVID-19', 'NATION'], 'BUSINESS': [], 'NATION': [], 'WORLD': [], 'TECHNOLOGY': [],
+           'ENTERTAINMENT': ['BREAKING NEWS', 'ART', 'TV', 'PEOPLE', 'MUSIC', 'BOOKS', 'MOVIES'],
+           'SCIENCE': [], 'HEALTH': [], 'SPORTS': ['BREAKING NEWS', 'TENNIS', 'CRICKET', 'F1', 'HOCKEY', 'FOOTBALL', 'BADMINTON', 'KABADDI']}}
+    
+    
+lang_wise_topics_hashcodes = {'bn': {'India': 'CAAqIQgKIhtDQkFTRGdvSUwyMHZNRE55YXpBU0FtSnVLQUFQAQ',
+  'The world': 'CAAqJggKIiBDQkFTRWdvSUwyMHZNRGx1YlY4U0FtSnVHZ0pKVGlnQVAB',
+  'Local news': 'CAAqHAgKIhZDQklTQ2pvSWJHOWpZV3hmZGpJb0FBUAE',
+  'Business': 'CAAqJggKIiBDQkFTRWdvSUwyMHZNRGx6TVdZU0FtSnVHZ0pKVGlnQVAB',
+  'Entertainment': 'CAAqJggKIiBDQkFTRWdvSUwyMHZNREpxYW5RU0FtSnVHZ0pKVGlnQVAB',
+  'Sports': 'CAAqJggKIiBDQkFTRWdvSUwyMHZNRFp1ZEdvU0FtSnVHZ0pKVGlnQVAB'},
+ 'en': {'COVID-19': 'CAAqIggKIhxDQkFTRHdvSkwyMHZNREZqY0hsNUVnSmxiaWdBUAE',
+  'India': 'CAAqJQgKIh9DQkFTRVFvSUwyMHZNRE55YXpBU0JXVnVMVWRDS0FBUAE',
+  'World': 'CAAqKggKIiRDQkFTRlFvSUwyMHZNRGx1YlY4U0JXVnVMVWRDR2dKSlRpZ0FQAQ',
+  'Your local news': 'CAAqHAgKIhZDQklTQ2pvSWJHOWpZV3hmZGpJb0FBUAE',
+  'Business': 'CAAqKggKIiRDQkFTRlFvSUwyMHZNRGx6TVdZU0JXVnVMVWRDR2dKSlRpZ0FQAQ',
+  'Technology': 'CAAqKggKIiRDQkFTRlFvSUwyMHZNRGRqTVhZU0JXVnVMVWRDR2dKSlRpZ0FQAQ',
+  'Entertainment': 'CAAqKggKIiRDQkFTRlFvSUwyMHZNREpxYW5RU0JXVnVMVWRDR2dKSlRpZ0FQAQ',
+  'Sports': 'CAAqKggKIiRDQkFTRlFvSUwyMHZNRFp1ZEdvU0JXVnVMVWRDR2dKSlRpZ0FQAQ',
+  'Science': 'CAAqKggKIiRDQkFTRlFvSUwyMHZNRFp0Y1RjU0JXVnVMVWRDR2dKSlRpZ0FQAQ',
+  'Health': 'CAAqJQgKIh9DQkFTRVFvSUwyMHZNR3QwTlRFU0JXVnVMVWRDS0FBUAE'},
+ 'gu': {'COVID-19': 'CAAqIggKIhxDQkFTRHdvSkwyMHZNREZqY0hsNUVnSm9hU2dBUAE',
+  'India': 'CAAqIQgKIhtDQkFTRGdvSUwyMHZNRE55YXpBU0FtaHBLQUFQAQ',
+  'The world': 'CAAqJggKIiBDQkFTRWdvSUwyMHZNRGx1YlY4U0FtaHBHZ0pKVGlnQVAB',
+  'Your local news': 'CAAqHAgKIhZDQklTQ2pvSWJHOWpZV3hmZGpJb0FBUAE',
+  'Business': 'CAAqJggKIiBDQkFTRWdvSUwyMHZNRGx6TVdZU0FtaHBHZ0pKVGlnQVAB',
+  'Entertainment': 'CAAqJggKIiBDQkFTRWdvSUwyMHZNREpxYW5RU0FtaHBHZ0pKVGlnQVAB',
+  'Sports': 'CAAqJggKIiBDQkFTRWdvSUwyMHZNRFp1ZEdvU0FtaHBHZ0pKVGlnQVAB'},
+ 'hi': {'COVID-19': 'CAAqIggKIhxDQkFTRHdvSkwyMHZNREZqY0hsNUVnSm9hU2dBUAE',
+  'India': 'CAAqIQgKIhtDQkFTRGdvSUwyMHZNRE55YXpBU0FtaHBLQUFQAQ',
+  'World': 'CAAqJggKIiBDQkFTRWdvSUwyMHZNRGx1YlY4U0FtaHBHZ0pKVGlnQVAB',
+  'your local news': 'CAAqHAgKIhZDQklTQ2pvSWJHOWpZV3hmZGpJb0FBUAE',
+  'business': 'CAAqJggKIiBDQkFTRWdvSUwyMHZNRGx6TVdZU0FtaHBHZ0pKVGlnQVAB',
+  'Entertainment': 'CAAqJggKIiBDQkFTRWdvSUwyMHZNREpxYW5RU0FtaHBHZ0pKVGlnQVAB',
+  'Play': 'CAAqJggKIiBDQkFTRWdvSUwyMHZNRFp1ZEdvU0FtaHBHZ0pKVGlnQVAB'},
+ 'kn': {'COVID-19': 'CAAqIggKIhxDQkFTRHdvSkwyMHZNREZqY0hsNUVnSm9hU2dBUAE',
+  'भारत': 'CAAqIQgKIhtDQkFTRGdvSUwyMHZNRE55YXpBU0FtaHBLQUFQAQ',
+  'दुनिया': 'CAAqJggKIiBDQkFTRWdvSUwyMHZNRGx1YlY4U0FtaHBHZ0pKVGlnQVAB',
+  'आपकी स्थानीय खबरें': 'CAAqHAgKIhZDQklTQ2pvSWJHOWpZV3hmZGpJb0FBUAE',
+  'कारोबार': 'CAAqJggKIiBDQkFTRWdvSUwyMHZNRGx6TVdZU0FtaHBHZ0pKVGlnQVAB',
+  'मनोरंजन': 'CAAqJggKIiBDQkFTRWdvSUwyMHZNREpxYW5RU0FtaHBHZ0pKVGlnQVAB',
+  'खेल': 'CAAqJggKIiBDQkFTRWdvSUwyMHZNRFp1ZEdvU0FtaHBHZ0pKVGlnQVAB'},
+ 'ml': {'India': 'CAAqIQgKIhtDQkFTRGdvSUwyMHZNRE55YXpBU0FtMXNLQUFQAQ',
+  'The world': 'CAAqJggKIiBDQkFTRWdvSUwyMHZNRGx1YlY4U0FtMXNHZ0pKVGlnQVAB',
+  'Your local news': 'CAAqHAgKIhZDQklTQ2pvSWJHOWpZV3hmZGpJb0FBUAE',
+  'Entertainment': 'CAAqJggKIiBDQkFTRWdvSUwyMHZNREpxYW5RU0FtMXNHZ0pKVGlnQVAB',
+  'Sports': 'CAAqJggKIiBDQkFTRWdvSUwyMHZNRFp1ZEdvU0FtMXNHZ0pKVGlnQVAB'},
+ 'ta': {'India': 'CAAqIQgKIhtDQkFTRGdvSUwyMHZNRE55YXpBU0FuUmhLQUFQAQ',
+  'The world': 'CAAqJggKIiBDQkFTRWdvSUwyMHZNRGx1YlY4U0FuUmhHZ0pKVGlnQVAB',
+  'Local news for you': 'CAAqHAgKIhZDQklTQ2pvSWJHOWpZV3hmZGpJb0FBUAE',
+  'Business': 'CAAqJggKIiBDQkFTRWdvSUwyMHZNRGx6TVdZU0FuUmhHZ0pKVGlnQVAB',
+  'Entertainment': 'CAAqJggKIiBDQkFTRWdvSUwyMHZNREpxYW5RU0FuUmhHZ0pKVGlnQVAB',
+  'Sports': 'CAAqJggKIiBDQkFTRWdvSUwyMHZNRFp1ZEdvU0FuUmhHZ0pKVGlnQVAB'},
+ 'te': {'India': 'CAAqIQgKIhtDQkFTRGdvSUwyMHZNRE55YXpBU0FuUmxLQUFQAQ',
+  'The world': 'CAAqJggKIiBDQkFTRWdvSUwyMHZNRGx1YlY4U0FuUmxHZ0pKVGlnQVAB',
+  'Your local news': 'CAAqHAgKIhZDQklTQ2pvSWJHOWpZV3hmZGpJb0FBUAE',
+  'Entertainment': 'CAAqJggKIiBDQkFTRWdvSUwyMHZNREpxYW5RU0FuUmxHZ0pKVGlnQVAB',
+  'Sports': 'CAAqJggKIiBDQkFTRWdvSUwyMHZNRFp1ZEdvU0FuUmxHZ0pKVGlnQVAB'},
+ 'mr': {'India': 'CAAqIQgKIhtDQkFTRGdvSUwyMHZNRE55YXpBU0FtMXlLQUFQAQ',
+  'Your local news': 'CAAqHAgKIhZDQklTQ2pvSWJHOWpZV3hmZGpJb0FBUAE',
+  'Entertainment': 'CAAqJggKIiBDQkFTRWdvSUwyMHZNREpxYW5RU0FtMXlHZ0pKVGlnQVAB',
+  'Games': 'CAAqJggKIiBDQkFTRWdvSUwyMHZNRFp1ZEdvU0FtMXlHZ0pKVGlnQVAB'}}
