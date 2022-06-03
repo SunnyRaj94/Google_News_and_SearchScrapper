@@ -109,7 +109,6 @@ class GSearch:
         else:
             if self.logger != None:
                 self.logger.info(message)
-        return soup
     
     def __make_request(self,url,parser="html.parser"):
         response = self.session.get(url,parser=parser,request_type='get',
@@ -128,6 +127,14 @@ class GSearch:
             except:
                 pass
         self.search_results = self.search_results + result
+        
+    def get_images_from_page(self,soup):
+        scripts = [a for a in soup.select("script") if "AF_initDataCallback" in str(a)]
+        script_string = get_needed_string(scripts[-1].string,'AF_initDataCallback(',");")
+        json_data = json.loads(get_needed_string(script_string,'hash: \'2\', data:',', sideChannel: {}}'))
+        images = list(set([a for a in extract_strings(json_data) if isinstance(a,str)
+                                                                     and a.startswith("https://encrypted-tbn0.gstatic.com")]))
+        return images
     
     def _generate_urls_(self,query,search_type=None,page_count=20,**kwargs):
         advance_search_operators_from_param = {}
@@ -148,7 +155,7 @@ class GSearch:
                 __query__ = __query__ + f"{k}%3A" + v + "+"
             __query__ = __query__ + search_query
             if search_type:
-                query = query +"&tbm="+self.search_types[search_type]
+                __query__ = __query__ +"&tbm="+self.search_types[search_type]
             __query__ = __query__ +'&start=' + str((int(page)*10))
             query_urls.append(self.BASE_URL+__query__)
         return query_urls
@@ -163,3 +170,25 @@ class GSearch:
         response = self.search_results[:]
         self.search_results = []
         return response
+    
+    def get_images_from_search(self,soup):
+        all_script_tags = soup.select('script')
+        matched_images_data = ''.join(re.findall(r"AF_initDataCallback\(([^<]+)\);", str(all_script_tags)))
+        matched_images_data_fix = json.dumps(matched_images_data)
+        matched_images_data_json = json.loads(matched_images_data_fix)
+
+        # matched_google_full_resolution_images = re.findall(r"(?:'|,),\[\"(https:|http.*?)\",\d+,\d+\]",
+        #                                                     matched_images_data_json)
+        matched_google_image_data = re.findall(r'\[\"GRID_STATE0\",null,\[\[1,\[0,\".*?\",(.*),\"All\",', matched_images_data_json)
+        matched_google_images_thumbnails = ', '.join(
+                re.findall(r'\[\"(https\:\/\/encrypted-tbn0\.gstatic\.com\/images\?.*?)\",\d+,\d+\]',
+                        str(matched_google_image_data))).split(', ')
+        images = []
+        for fixed_google_image_thumbnail in matched_google_images_thumbnails:
+            # https://stackoverflow.com/a/4004439/15164646 comment by Frédéric Hamidi
+            google_image_thumbnail_not_fixed = bytes(fixed_google_image_thumbnail, 'ascii').decode('unicode-escape')
+
+            # after first decoding, Unicode characters are still present. After the second iteration, they were decoded.
+            google_image_thumbnail = bytes(google_image_thumbnail_not_fixed, 'ascii').decode('unicode-escape')
+            images.append(google_image_thumbnail)
+        return images

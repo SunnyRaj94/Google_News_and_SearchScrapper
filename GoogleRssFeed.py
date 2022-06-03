@@ -14,24 +14,45 @@ class GFeed:
         else:
             if self.logger != None:
                 self.logger.info(message)
-        return soup
     
-    def get_articles(self,query_url,formatted=True):
-        # soup = BeautifulSoup(requests.get(query_url).content,"xml")
-        soup = self.session.get(query_url,parser="xml",request_type='get',
-                                        headers=None,payload=None,params=None,
-                                        try_times=20)
+    def get_articles(self,query_url,formatted=True,feature_image=False,source=False):
+        soup = self.make_request(query_url,parser="xml")
         articles = soup.find_all("item")
         if formatted:
-            articles = [self.format_article(a) for a in articles]
+            articles = [self.format_article(a,feature_image,source) for a in articles]
         return articles
+    
+    def make_request(self,url,**kwargs):
+        request_type = kwargs.get('request_type', "get")
+        headers = kwargs.get('headers',None)
+        payload = kwargs.get('payload',None)
+        params = kwargs.get('params',None)
+        try_times = kwargs.get('try_times', 20)
+        parser = kwargs.get('parser', "html.parser")
 
-    def get_feature_image(self,article_url):
-        # soup = BeautifulSoup(requests.get(article_url).content,"html.parser")
-        soup = self._soup(article_url)
-        return soup.find('meta',property="og:image")['content']
+        
+        response = self.session.get(url,parser=parser,request_type=request_type,
+                                        headers=headers,payload=payload,params=params,
+                                        try_times=try_times)
+        return response
 
-    def format_article(self,article,feature_image=False):
+    def get_feature_image_and_original_article_link(self,article_url):
+        response = self.make_request(article_url,parser='no_content')
+        original_url = response.url
+        soup = BeautifulSoup(response.content,'html.parser')
+        feature_image = self.get_feature_image(article_url,soup)
+        return original_url,feature_image
+    
+    def get_feature_image(self,article_url,soup=None):
+        try:
+            if soup == None:
+                soup = self.make_request(article_url,parser='html.parser')
+            element = soup.find('meta',property="og:image") if soup.find('meta',property="og:image") else soup.find('meta',itemprop="image")
+            return element.get("content") if element else element
+        except:
+            return None
+    
+    def format_article(self,article,feature_image=False,source=False):
         data = {}
         data['title'] = article.title.text
         data['link'] = article.link.text
@@ -39,20 +60,32 @@ class GFeed:
         data['description'] = article.description.text
         if feature_image:
             data['feature_image'] = self.get_feature_image(article.link.text)
+        if source:
+            element = article.source
+            data['source_name'] = element.get_text() if element else element
+            data['source_url'] = element.get("url") if element else element
         return data
     
-    def make_query_url(self,lang,query,hours=1):
-        url =  "https://news.google.com/rss/search?q="+ query.replace(" ","%20") + f"%20when%3A{hours}h&hl={lang}&gl=IN&ceid=IN:{lang}"
+    def make_query_url(self,lang,query,hours=1,geo=False,country='IN'):
+        if geo:
+            url =  "https://news.google.com/rss/geo/"+ query.replace(" ","%20") + f"?%20when%3A{hours}h&hl={lang}&gl={country}&ceid={country}:{lang}"
+        else:
+            url =  "https://news.google.com/rss/search?q="+ query.replace(" ","%20") + f"%20when%3A{hours}h&hl={lang}&gl={country}&ceid={country}:{lang}"
         return url
 
-    def make_topic_url(self,lang,topic,hours=3):
-        ceid = f"when%3A{hours}h&hl={lang}&gl=IN&ceid=IN:{lang}".replace(":","%3A")
+    def make_topic_url(self,lang,topic=None,hours=3,country='IN'):
+        ceid = f"when%3A{hours}h&hl={lang}&gl={country}&ceid={country}:{lang}".replace(":","%3A")
         
-        if topic.upper() in self.topics:
-            headlines = f'https://news.google.com/rss/headlines/section/topic/{topic.upper()}?' + ceid
-            return headlines
+        if topic:
+            if topic.upper() in self.topics:
+                headlines = f'https://news.google.com/rss/headlines/section/topic/{topic.upper()}?' + ceid
+                return headlines
+            else:
+                headlines = f'https://news.google.com/rss/headlines?' + ceid
+                return headlines
         else:
-            return "invalid topic"
+            headlines = f'https://news.google.com/rss/headlines?' + ceid
+            return headlines
 
     def lang_articles(self,lang,query,hours=1):
         if query.upper() in self.topics:
