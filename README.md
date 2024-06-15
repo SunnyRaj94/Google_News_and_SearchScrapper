@@ -1,13 +1,34 @@
-# Google_News_and_SearchScrapper
+## Google_News_and_SearchScrapper
+**is a powerful Python tool designed to programmatically extract and parse results from Google Search and Google News.\
+Whether you're conducting research, gathering competitive intelligence, or monitoring news developments,\
+this repository provides a streamlined way to access Google’s vast repository of information.**
 
-Google_News_and_SearchScrapper parses Google search engine results and google news feeds results in a python dict.
+## Features
+- Comprehensive Results Parsing: Effortlessly retrieve all found links, titles, and descriptions from Google Search and Google News.
+- Structured Output: Outputs results in a clean Python dictionary format for easy integration with other applications and workflows.
+- Proxy Support: Enhance your scraping process with built-in support for proxies to manage requests and avoid potential rate limiting by Google.
 
-It allows you to extract all found links and their titles and descriptions programmatically,
+## Use Cases
+- Research: Quickly gather data from Google searches and news articles for academic, market, or competitive research.
+- News Monitoring: Keep track of the latest news across various topics and regions.
+- Data Aggregation: Collect and compile data from Google's search results for analysis or reporting.
 
-It also supports proxies for scrapping process.
+## Installation
+To install the Google_News_and_SearchScrapper, clone this repository and install the necessary dependencies:
+```
+  git clone https://github.com/yourusername/Google_News_and_SearchScrapper.git
+  cd Google_News_and_SearchScrapper
+  pip install -r requirements.txt
+
+```
+## Usage
+***Below is a simple example of how to use the scraper:***
 
 
 ## Scrape news articles from google news
+
+## Proxy Configuration
+To use proxies with the scrapper, simply pass a list of proxy URLs when initializing the scrapper.
 ```
 PARAMS ---
 use_proxy_param --- It enables to use proxy for scrapping
@@ -79,3 +100,12 @@ query_results = gs.get_results(query_urls[0:1])
   'links': ['https://twitter.com/nytfood']}]
 
 ```
+
+## Contribution
+Contributions are welcome! Feel free to open issues or submit pull requests to enhance the functionality or add new features.
+
+
+## Contact
+For any questions or suggestions, please reach out to [Sunny Raj](https://www.linkedin.com/in/sunny-raj-74631416b/) or create an issue on the repository.
+
+# ***With Google_News_and_SearchScrapper, you have the power to harness Google’s search and news capabilities right at your fingertips. Happy scraping!***
